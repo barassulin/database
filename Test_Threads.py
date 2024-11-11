@@ -1,105 +1,60 @@
 from threading import Thread
-import random
-import Tests
-import socket
+from Tests import Tests
+
 # constants
-TEST_DICT = {}
-NUM_OF_TESTS = 11
+TEST_DICT = {
+    1: 2,
+    4: 5
+}
 FILE_PATH = 'TEST'
-KEY = ''
-VAL = ''
-global reading
-reading = False
+KEY = 1
+VAL = 4
 
 
-def read(sdb):
-    sdb.acquire_read()
-    while reading:
-        print('')
-        # reading or blocked?
-    sdb.release_read()
-
-
-
-def multread(sdb):
-    global reading
-    count = 0
-    if count < NUM_OF_TESTS:
-        reading = True
-        func(read(), sdb)
-        count = count+1
-    while count < NUM_OF_TESTS:
-        func(read(), sdb)
-        count = count+1
-    reading = False
-
-
-
-def run(ts):
+def run(tt):
     """
     handle a connection
-    :param ts:
+    :param tt:
     :return: None
     """
-    sdb = ts.create_file(FILE_PATH)
-    print(ts.write_read(sdb, KEY, VAL))
-    print(ts.delete_read(sdb, KEY))
-    print(multread(sdb))
-    ts.delete_file(FILE_PATH)
-
-
-def func(f, arg):
-    thread = Thread(target=f,
-                    args=(arg))
-    thread.start()
-
-
-"""
-multyreads:
-open socket
-func multyreads(func)
-"""
-
-
-"""
-func run all
-"""
-
-"""
-waiting f client
-thread for all tasks
-"""
+    sdb = tt.create_file(FILE_PATH)
+    print("start")
+    sdb.dict_set(TEST_DICT)
+    print("1")
+    print(tt.write_per(sdb, KEY, VAL))
+    print("2")
+    print(tt.delete_read(sdb, KEY))
+    print("3")
+    thread = tt.read_no_write(sdb, KEY, VAL)
+    thread[0].join()
+    print("4")
+    thread = tt.write_no_read(sdb, KEY, VAL)
+    thread[0].join()
+    print("5")
+    thread = tt.check_multread(sdb, KEY)
+    thread[0].join()
+    print("6")
+    thread = tt.check_multread_write(sdb, KEY, VAL)
+    thread[0].join()
+    print("7")
+    print(tt.read_per(sdb, KEY, VAL))
+    print("8")
+    tt.delete_file(FILE_PATH)
+    print('finish')
 
 
 class TestThreads(Tests):
     def __init__(self, test_dict):
         super().__init__(test_dict, 'threads')
 
-"""
-    def read_mult(self, func):
-        # read multi=num_of
-        counter = 0
-        while counter != self.__numof:
-            func()
-            counter = counter + 1
-"""
+    # @staticmethod
+    def func(self, f5, arg):
+        thread = Thread(target=f5,
+                        args=arg)
+        thread.start()
+        return thread
 
 
 if __name__ == "__main__":
-    """
-    open socket
-    creat testthread
-    creat thread sevrer
-    run all tests
-    """
-    global reading
-    ts = TestThreads(TEST_DICT)
-    run(ts)
-
-
-"""
-global count clients
-keep connect clients while num of clients<numof
-client keeps reading while num of clients<numof
-
-"""
+    tt = TestThreads(TEST_DICT)
+    run(tt)
